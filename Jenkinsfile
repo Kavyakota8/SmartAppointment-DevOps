@@ -4,6 +4,7 @@ pipeline {
     environment {
         IMAGE_NAME = "kavyakota8/smartappointment"
         IMAGE_TAG = "latest"
+        KUBECONFIG = "C:\\ProgramData\\Jenkins\\.kube\\config" // Use your kubeconfig path
     }
 
     stages {
@@ -15,24 +16,35 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                echo "Skipping Docker build on Windows for now"
-                // docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}")
+                script {
+                    docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}")
+                }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                echo "Skipping Docker push on Windows for now"
-                // docker.withRegistry('', 'dockerhub-credentials') {
-                //     docker.image("${env.IMAGE_NAME}:${env.IMAGE_TAG}").push()
-                // }
+                script {
+                    docker.withRegistry('', 'dockerhub-credentials') {
+                        docker.image("${env.IMAGE_NAME}:${env.IMAGE_TAG}").push()
+                    }
+                }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
+                // Use bat instead of sh for Windows
                 bat 'kubectl apply -f k8s/deployment.yaml'
                 bat 'kubectl apply -f k8s/service.yaml'
+            }
+        }
+
+        stage('Check Deployment') {
+            steps {
+                // Verify pods are running
+                bat 'kubectl get pods -o wide'
+                bat 'kubectl get svc'
             }
         }
     }
