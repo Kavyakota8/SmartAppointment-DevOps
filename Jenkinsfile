@@ -4,7 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = "kavyakota8/smartappointment"
         IMAGE_TAG = "latest"
-        KUBECONFIG = "C:\\ProgramData\\Jenkins\\.kube\\config" // Use your kubeconfig path
+        DOCKER_USERNAME = credentials('dockerhub-username')  // Jenkins credential ID
+        DOCKER_PASSWORD = credentials('dockerhub-password')  // Jenkins credential ID
     }
 
     stages {
@@ -16,41 +17,41 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}")
-                }
+                bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry('', 'dockerhub-credentials') {
-                        docker.image("${env.IMAGE_NAME}:${env.IMAGE_TAG}").push()
-                    }
-                }
+                bat """
+                docker login -u %DOCKER_USERNAME% -p %DOCKER_PASSWORD%
+                docker push %IMAGE_NAME%:%IMAGE_TAG%
+                """
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                // Use bat instead of sh for Windows
+                // Apply Kubernetes manifests
                 bat 'kubectl apply -f k8s/deployment.yaml'
                 bat 'kubectl apply -f k8s/service.yaml'
             }
         }
 
-        stage('Check Deployment') {
+        stage('Verify Deployment') {
             steps {
-                // Verify pods are running
-                bat 'kubectl get pods -o wide'
+                bat 'kubectl get pods'
                 bat 'kubectl get svc'
             }
         }
     }
 
     post {
-        success { echo 'Deployment successful!' }
-        failure { echo 'Deployment failed!' }
+        success {
+            echo 'Deployment successful!'
+        }
+        failure {
+            echo 'Deployment failed!'
+        }
     }
 }
