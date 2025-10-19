@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>All Appointments</h2>
+{% if appointments %}
+<table>
+  <thead>
+    <tr><th>ID</th><th>Name</th><th>Email</th><th>Date/Time</th><th>Notes</th><th>Action</th></tr>
+  </thead>
+  <tbody>
+  {% for a in appointments %}
+    <tr>
+      <td>{{ a[0] }}</td>
+      <td>{{ a[1] }}</td>
+      <td>{{ a[2] }}</td>
+      <td>{{ a[3] }}</td>
+      <td>{{ a[4] }}</td>
+      <td>
+        <form method="post" action="/delete/{{ a[0] }}" onsubmit="return confirm('Cancel appointment?')">
+          <button type="submit">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No appointments yet. Click <a href="/create">here</a> to book one!</p>
+{% endif %}
+{% endblock %}
