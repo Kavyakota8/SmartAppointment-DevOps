@@ -15,26 +15,24 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}")
-                }
+                echo "Skipping Docker build on Windows for now"
+                // docker.build("${env.IMAGE_NAME}:${env.IMAGE_TAG}")
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry('', 'dockerhub-credentials') {
-                        docker.image("${env.IMAGE_NAME}:${env.IMAGE_TAG}").push()
-                    }
-                }
+                echo "Skipping Docker push on Windows for now"
+                // docker.withRegistry('', 'dockerhub-credentials') {
+                //     docker.image("${env.IMAGE_NAME}:${env.IMAGE_TAG}").push()
+                // }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s/deployment.yaml'
-                sh 'kubectl apply -f k8s/service.yaml'
+                bat 'kubectl apply -f k8s/deployment.yaml'
+                bat 'kubectl apply -f k8s/service.yaml'
             }
         }
     }
