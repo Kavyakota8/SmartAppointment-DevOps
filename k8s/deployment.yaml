@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartappointment-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: smartappointment
+  template:
+    metadata:
+      labels:
+        app: smartappointment
+    spec:
+      containers:
+      - name: smartappointment
+        image: smartappointment:latest 
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 5000
