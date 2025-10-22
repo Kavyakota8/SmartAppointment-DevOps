@@ -2,56 +2,63 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'kavyakota8/smartappointment:latest'
-        DOCKERHUB_CREDENTIALS = 'dockerhub-credentials' // Jenkins Docker Hub credential ID
+        IMAGE_NAME = 'kavyakota18/smartappointment'
+        IMAGE_TAG = 'latest'
+        DOCKERHUB_CREDENTIALS = 'dockerhub-credentials'
     }
 
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', url: 'https://github.com/Kavyakota8/SmartAppointment-DevOps.git'
+                echo 'Cloning repository'
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    extensions: [[$class: 'CloneOption', noTags: false, shallow: false]],
+                    userRemoteConfigs: [[url: 'https://github.com/Kavyakota8/SmartAppointment-DevOps.git']]
+                ])
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    docker.build(DOCKER_IMAGE)
-                }
+                echo 'Building Docker Image'
+                bat "docker build -t %IMAGE_NAME%:%IMAGE_TAG% ."
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS) {
-                        docker.image(DOCKER_IMAGE).push()
-                    }
+                echo 'Pushing Docker Image'
+                withCredentials([usernamePassword(credentialsId: "${DOCKERHUB_CREDENTIALS}", usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
+                    bat "docker push %IMAGE_NAME%:%IMAGE_TAG%"
                 }
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh 'kubectl apply -f k8s/deployment.yaml'
-                sh 'kubectl apply -f k8s/service.yaml'
+                echo 'Deploying to Kubernetes'
+                bat 'kubectl apply -f k8s/deployment.yaml'
+                bat 'kubectl apply -f k8s/service.yaml'
             }
         }
 
         stage('Verify Deployment') {
             steps {
-                sh 'kubectl get pods'
-                sh 'kubectl get svc'
+                echo 'Verifying Deployment'
+                bat 'kubectl get pods'
+                bat 'kubectl get svc'
             }
         }
     }
 
     post {
         success {
-            echo 'SmartAppointment App Deployed Successfully!'
+            echo 'SmartAppointment deployed successfully!'
         }
         failure {
-            echo 'Pipeline Failed! Check logs.'
+            echo 'Pipeline failed. Check logs.'
         }
     }
 }
