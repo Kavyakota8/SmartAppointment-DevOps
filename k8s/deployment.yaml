@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: smartappointment
-        image: smartappointment:latest 
+        image: kavyakota18/smartappointment:latest 
         imagePullPolicy: Never
         ports:
         - containerPort: 5000
